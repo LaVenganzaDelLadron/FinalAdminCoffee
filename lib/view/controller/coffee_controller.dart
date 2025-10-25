@@ -1,7 +1,5 @@
 import 'dart:io';
-
 import 'package:get/get.dart';
-
 import '../services/api_coffee_services.dart';
 
 class CoffeeController extends GetxController {
@@ -31,6 +29,21 @@ class CoffeeController extends GetxController {
       }
     }catch(e, stack){
       print(e);
+    }
+  }
+
+  Future<int> fetchCoffeeCount(String aid) async {
+    try {
+      final result = await ApiCoffeeServices.coffeeCount(aid);
+
+      if (result["count"] != null) {
+        int count = result["count"];
+        return count;
+      } else {
+        return 0;
+      }
+    } catch (e, stack) {
+      return 0;
     }
   }
 

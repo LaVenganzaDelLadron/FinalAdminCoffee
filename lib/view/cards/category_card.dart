@@ -4,14 +4,12 @@ class CategoryCard extends StatelessWidget {
   final String id;
   final String categoryName;
   final VoidCallback? onDelete;
-  final VoidCallback? onEdit;
 
   const CategoryCard({
     super.key,
     required this.id,
     required this.categoryName,
     this.onDelete,
-    this.onEdit,
   });
 
   Future<void> _confirmDelete(BuildContext context) async {
@@ -78,12 +76,7 @@ class CategoryCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.edit, color: Colors.brown),
-                onPressed: onEdit,
-                tooltip: "Edit Category",
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_forever_rounded, color: Colors.redAccent),
+                icon: const Icon(Icons.remove_circle_outline_sharp, color: Colors.redAccent),
                 onPressed: () => _confirmDelete(context),
                 tooltip: "Delete Category",
               ),

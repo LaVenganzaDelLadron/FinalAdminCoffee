@@ -13,7 +13,7 @@ class ApiCoffeeServices {
       String aid,
       String image
       ) async {
-    final url = Uri.parse('$baseUrl/coffee/add_coffee');
+    final url = Uri.parse('$baseUrl/coffee/addcoffee/');
     var request = http.MultipartRequest('POST', url);
 
     request.fields['name'] = name;
@@ -33,7 +33,6 @@ class ApiCoffeeServices {
         'Failed to add coffee. Status: ${response.statusCode}. Body: ${response.body}',
       );
     }
-
   }
 
 
@@ -50,15 +49,17 @@ class ApiCoffeeServices {
   }
 
 
+  static Future<Map<String, dynamic>> coffeeCount(String aid) async {
+    final url = Uri.parse('$baseUrl/coffee/coffeecount/$aid');
+    final response = await http.get(url);
 
-
-
-
-
-
-
-
-
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception(
+          'Failed to fetch product count: ${response.statusCode} ${response.body}');
+    }
+  }
 
 
 }

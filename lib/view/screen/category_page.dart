@@ -63,7 +63,6 @@ class _CategoryPageState extends State<CategoryPage> {
               ),
               const SizedBox(height: 30),
 
-              // ➕ Input Field
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 decoration: BoxDecoration(

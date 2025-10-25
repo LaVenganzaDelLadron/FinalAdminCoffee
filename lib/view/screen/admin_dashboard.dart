@@ -1,8 +1,14 @@
 import 'dart:ui';
 import 'package:admincoffee/view/screen/category_page.dart';
 import 'package:admincoffee/view/screen/coffee_page.dart';
+import 'package:admincoffee/view/screen/store_page.dart';
 import 'package:flutter/material.dart';
-final String adminId = "admin_001";
+import '../controller/auth_controller.dart';
+import '../controller/coffee_controller.dart';
+
+
+final adminId =
+    AuthController.instance.currentAdmin.value?.id.toString() ?? "0";
 
 
 
@@ -178,7 +184,7 @@ class AdminDashboard extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               children: [
                 FutureBuilder<int>(
-                  future: GetCoffeeCountController.instance.fetchCoffeeCount(adminId),
+                  future: CoffeeController().fetchCoffeeCount(adminId),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Container(
@@ -191,13 +197,7 @@ class AdminDashboard extends StatelessWidget {
                           ),
                         ),
                         child: const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(24),
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 3,
-                            ),
-                          ),
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
                         ),
                       );
                     } else if (snapshot.hasError || !snapshot.hasData) {
@@ -210,24 +210,13 @@ class AdminDashboard extends StatelessWidget {
                         color2: const Color(0xFFD7CCC8),
                       );
                     } else {
-                      return GestureDetector(
-                        onTap: () async {
-                          final orders = await GetOrderController.instance.fetchAllOrder();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AllOrderPage(order: orders),
-                            ),
-                          );
-                        },
-                        child: _buildEnhancedStatCard(
-                          context,
-                          title: "Coffee",
-                          value: snapshot.data.toString(),
-                          icon: Icons.coffee,
-                          color1: const Color(0xFF8D6E63),
-                          color2: const Color(0xFFBCAAA4),
-                        ),
+                      return _buildEnhancedStatCard(
+                        context,
+                        title: "Coffee",
+                        value: snapshot.data.toString(),
+                        icon: Icons.coffee,
+                        color1: const Color(0xFF8D6E63),
+                        color2: const Color(0xFFBCAAA4),
                       );
                     }
                   },
@@ -494,7 +483,8 @@ class AdminDashboard extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const AllStorePage()),
+                        builder: (context) => const StorePage(),
+                      ),
                     );
                   },
                 ),

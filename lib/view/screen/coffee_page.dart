@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../controller/auth_controller.dart';
 import '../controller/coffee_controller.dart';
+import '../controller/category_controller.dart';
 
 class AddCoffeePage extends StatefulWidget {
   const AddCoffeePage({super.key});
@@ -18,19 +19,20 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
   final priceController = TextEditingController();
 
   final coffeeController = Get.put(CoffeeController());
+  final categoryController = Get.put(CategoryController());
   final ImagePicker _picker = ImagePicker();
-  File? _imageFile;
 
-  String selectedCategory = "Signature";
+  File? _imageFile;
   bool isActive = true;
 
-  final List<String> categories = [
-    "Signature",
-    "Classics",
-    "Cold Brew",
-    "Seasonal",
-    "Reserve",
-  ];
+  String? selectedCategoryId;
+  String? selectedCategoryName;
+
+  @override
+  void initState() {
+    super.initState();
+    categoryController.fetchCategories(); // 🔄 Load categories
+  }
 
   Future<void> _pickImage() async {
     final picked = await _picker.pickImage(source: ImageSource.gallery);
@@ -50,7 +52,11 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
     final desc = descController.text.trim();
     final price = priceController.text.trim();
 
-    if (name.isEmpty || desc.isEmpty || price.isEmpty || _imageFile == null) {
+    if (name.isEmpty ||
+        desc.isEmpty ||
+        price.isEmpty ||
+        _imageFile == null ||
+        selectedCategoryId == null) {
       Get.snackbar("Error", "Please fill all fields and upload an image.",
           backgroundColor: Colors.brown.shade100,
           colorText: Colors.brown.shade900);
@@ -64,9 +70,9 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
       name,
       desc,
       double.tryParse(price) ?? 0,
-      selectedCategory,
+      selectedCategoryId!, // ✅ Send category ID instead of name
       adminId,
-      _imageFile!, // Pass the picked File here
+      _imageFile!,
     );
 
     Get.snackbar("Success", "Coffee added successfully! ☕",
@@ -89,7 +95,7 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
+                  // 🔙 Header
                   Row(
                     children: [
                       IconButton(
@@ -114,7 +120,7 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Coffee Preview
+                  // ☕ Coffee Image Upload
                   GestureDetector(
                     onTap: _pickImage,
                     child: Container(
@@ -131,8 +137,7 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
                         ],
                         image: DecorationImage(
                           image: _imageFile == null
-                              ? const AssetImage(
-                              'assets/placeholder_coffee.jpg')
+                              ? const AssetImage('assets/placeholder_coffee.jpg')
                               : FileImage(_imageFile!) as ImageProvider,
                           fit: BoxFit.cover,
                         ),
@@ -181,7 +186,7 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Form container
+                  // 🧾 Form
                   Container(
                     padding: const EdgeInsets.all(25),
                     decoration: BoxDecoration(
@@ -213,19 +218,41 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
                             keyboardType: TextInputType.number),
                         const SizedBox(height: 20),
 
+                        // 🟤 Dynamic Categories Dropdown
                         _buildLabel("Category"),
-                        DropdownButtonFormField<String>(
-                          value: selectedCategory,
-                          items: categories
-                              .map((cat) => DropdownMenuItem(
-                            value: cat,
-                            child: Text(cat),
-                          ))
-                              .toList(),
-                          onChanged: (val) =>
-                              setState(() => selectedCategory = val!),
-                          decoration: _fieldDecoration(),
-                        ),
+                        Obx(() {
+                          final categories = categoryController.categories;
+                          if (categories.isEmpty) {
+                            return const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text(
+                                "No categories available. Please add one first.",
+                                style: TextStyle(color: Colors.brown),
+                              ),
+                            );
+                          }
+
+                          return DropdownButtonFormField<String>(
+                            value: selectedCategoryId,
+                            items: categories
+                                .map((cat) => DropdownMenuItem<String>(
+                              value: cat.id.toString(),
+                              child: Text(cat.name),
+                            ))
+                                .toList(),
+                            onChanged: (val) {
+                              setState(() {
+                                selectedCategoryId = val;
+                                selectedCategoryName = categories
+                                    .firstWhere((c) =>
+                                c.id.toString() == val)
+                                    .name;
+                              });
+                            },
+                            decoration: _fieldDecoration(),
+                            hint: const Text("Select Category"),
+                          );
+                        }),
                         const SizedBox(height: 20),
 
                         Row(
