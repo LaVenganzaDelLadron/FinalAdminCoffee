@@ -11,6 +11,7 @@ import 'package:admincoffee/view/screen/manage_coffee_page.dart';
 import 'package:admincoffee/view/screen/store_page.dart';
 import 'package:admincoffee/view/screen/category_page.dart';
 
+import '../cards/top_selling_card.dart';
 import 'manage_store_page.dart';
 
 final adminId = AuthController.instance.currentAdmin.value?.id.toString() ?? "0";
@@ -325,56 +326,41 @@ class AdminDashboard extends StatelessWidget {
   }
 
   Widget _buildTopSellingOrders(BuildContext context) {
-    return FutureBuilder<List<Order>>(
-      future: GetStatusOrderController.instance.fetchOrdersByStatus("pending"),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(12),
-              child: CircularProgressIndicator(color: Colors.brown),
-            ),
+    final controller = Get.put(OrderController());
+
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(12),
+            child: CircularProgressIndicator(color: Colors.brown),
+          ),
+        );
+      }
+
+      if (controller.topSellingList.isEmpty) {
+        return const Center(
+          child: Text(
+            "No top-selling orders yet ☕",
+            style: TextStyle(color: Colors.grey),
+          ),
+        );
+      }
+
+      final topItems = controller.topSellingList;
+
+      return Column(
+        children: List.generate(topItems.length, (index) {
+          final item = topItems[index];
+          return TopSellingCard(
+            item: item,
+            rank: index + 1,
           );
-        } else if (snapshot.hasError) {
-          return const Center(
-            child: Text("⚠️ Failed to load pending orders.",
-                style: TextStyle(color: Colors.red)),
-          );
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(
-            child: Text(
-              "No pending orders found ☕",
-              style: TextStyle(color: Colors.grey),
-            ),
-          );
-        } else {
-          final orders = snapshot.data!;
-          return ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: orders.length,
-            itemBuilder: (context, index) {
-              final order = orders[index];
-              return Card(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-                elevation: 2,
-                child: ListTile(
-                  leading: const Icon(Icons.receipt, color: Colors.brown),
-                  title: Text("Order #${order.id}",
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text("Order ID: ${order.id}"),
-                  trailing: const Text("Pending",
-                      style: TextStyle(
-                          color: Colors.red, fontWeight: FontWeight.bold)),
-                ),
-              );
-            },
-          );
-        }
-      },
-    );
+        }),
+      );
+    });
   }
+
 
   Widget _buildRevenueOverview() {
     return Column(

@@ -59,4 +59,21 @@ class ApiOrderServices {
     }
   }
 
+  static Future<Map<String, dynamic>> getTopSelling() async {
+    final url = Uri.parse('$baseUrl/order/topselling/');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return {"orders": data};
+      } else {
+        return {"error": "Failed to load orders: ${response.body}"};
+      }
+    } catch (e, stack) {
+      return {"error": e.toString()};
+    }
+  }
+
 }
