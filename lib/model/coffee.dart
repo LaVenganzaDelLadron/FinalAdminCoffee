@@ -19,12 +19,14 @@ class Coffee {
 
   factory Coffee.fromJson(Map<String, dynamic> json) {
     return Coffee(
-      id: json['id'] ?? json['coffee_id'] ?? '',
-      name: json['name'] ?? '',
-      description: json['description'] ?? '',
-      category: json['category'] ?? '',
+      id: json['id']?.toString() ?? json['coffee_id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      category: json['category']?.toString() ?? '',
       price: (json['price'] is String)
           ? double.tryParse(json['price']) ?? 0.0
+          : (json['price'] is int)
+          ? (json['price'] as int).toDouble()
           : (json['price']?.toDouble() ?? 0.0),
       image: json['image'] != null
           ? Uint8List.fromList(List<int>.from(json['image']))

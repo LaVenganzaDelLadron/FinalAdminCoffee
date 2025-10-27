@@ -1,11 +1,13 @@
-import 'dart:io';
-import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
-
+import '../../model/stores.dart';
 import '../services/api_store_services.dart';
 
 
 class StoreController extends GetxController {
+
+  var storeList = <Store>[].obs;
+  var isLoading = false.obs;
+
 
   Future<void> AddStore(
       String name,
@@ -30,7 +32,29 @@ class StoreController extends GetxController {
     }catch(e, stack){
       print(e);
     }
-
   }
+
+  Future<void> fetchAllStores() async {
+    try {
+      isLoading(true);
+      final result = await ApiStoreServices.getAllStores();
+
+      final data = result["stores"] ?? [];
+
+      if (data is List) {
+        storeList.assignAll(
+          data.map((e) => Store.fromJson(e as Map<String, dynamic>)).toList(),
+        );
+      }else {
+        storeList.clear();
+      }
+    }catch(e, stack) {
+      print("❌ Error fetching orders: $e\n$stack");
+    }finally {
+      isLoading(false);
+    }
+  }
+
+
 
 }

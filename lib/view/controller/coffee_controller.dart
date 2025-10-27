@@ -1,8 +1,14 @@
 import 'dart:io';
 import 'package:get/get.dart';
+import '../../model/coffee.dart';
 import '../services/api_coffee_services.dart';
 
 class CoffeeController extends GetxController {
+
+  var coffeeList = <Coffee>[].obs;
+  var isLoading = false.obs;
+
+
 
   Future<void> AddCoffee(
       String name,
@@ -47,14 +53,25 @@ class CoffeeController extends GetxController {
     }
   }
 
+  Future<void> fetchAllCoffees(String aid) async {
+    try {
+      isLoading(true);
+      final result = await ApiCoffeeServices.getAllCoffees(aid);
+
+      final data = result["data"]?["coffees"] ?? result["coffees"];
+
+      if (data is List) {
+        coffeeList.assignAll(
+          data.map((e) => Coffee.fromJson(e as Map<String, dynamic>)).toList(),
+        );
+      } else {
+        coffeeList.clear();
+      }
+    } catch (e, st) {
+      print("❌ Error fetching coffees: $e\n$st");
+    } finally {
+      isLoading(false);
+    }
+  }
 
 }
-
-
-
-
-
-
-
-
-

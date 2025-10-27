@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:admincoffee/view/ipaddress/ip.dart';
 import 'package:http/http.dart' as http;
 
+import '../../model/stores.dart';
+
 
 class ApiStoreServices{
   static const String baseUrl = BASE_URL;
@@ -33,7 +35,34 @@ class ApiStoreServices{
 
   }
 
+  static Future<Map<String, dynamic>> deleteStore(String id) async {
+    final url = Uri.parse('$baseUrl/order/deletestore/$id');
+    final response = await http.delete(url);
 
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception(
+          'Failed to delete coffee: ${response.statusCode} ${response.body}');
+    }
+  }
+
+  static Future<Map<String, Object>> getAllStores() async {
+    final url = Uri.parse('$baseUrl/store/getstores/');
+    try{
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return {"stores": data};
+      } else {
+        return {"error": "Failed to load coffees: ${response.body}"};
+      }
+    }catch (e, stack) {
+      return {"error": e.toString()};
+    }
+  }
 
 
 

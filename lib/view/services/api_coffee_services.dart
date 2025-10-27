@@ -61,6 +61,22 @@ class ApiCoffeeServices {
     }
   }
 
+  static Future<Map<String, dynamic>> getAllCoffees(String aid) async {
+    final url = Uri.parse('$baseUrl/coffee/getproducts/$aid');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return {"coffees": data};
+      } else {
+        return {"error": "Failed to load coffees: ${response.body}"};
+      }
+    } catch (e, stack) {
+      return {"error": e.toString()};
+    }
+  }
 
 }
 
