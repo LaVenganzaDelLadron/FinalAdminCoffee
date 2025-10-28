@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../model/stores.dart';
+import '../../model/store.dart';
 import '../services/api_store_services.dart';
 
 
@@ -48,7 +48,7 @@ class CompactStoreCard extends StatelessWidget {
     if (confirm == true) {
       try {
         // ✅ assuming this function exists to delete/archive an order
-        final result = await ApiStoreServices.deleteStore(store.id as String);
+        final result = await ApiStoreServices.deleteStore(store.id.toString());
 
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

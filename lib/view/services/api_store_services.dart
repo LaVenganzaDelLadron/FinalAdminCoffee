@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:admincoffee/view/ipaddress/ip.dart';
 import 'package:http/http.dart' as http;
 
-import '../../model/stores.dart';
+import '../../model/store.dart';
 
 
 class ApiStoreServices{
@@ -36,7 +36,7 @@ class ApiStoreServices{
   }
 
   static Future<Map<String, dynamic>> deleteStore(String id) async {
-    final url = Uri.parse('$baseUrl/order/deletestore/$id');
+    final url = Uri.parse('$baseUrl/store/deletestore/$id');
     final response = await http.delete(url);
 
 

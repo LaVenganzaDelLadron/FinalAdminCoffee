@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import '../../model/stores.dart';
+import '../../model/store.dart';
 import '../services/api_store_services.dart';
 
 
