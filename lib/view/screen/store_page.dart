@@ -46,7 +46,7 @@ class _AddStorePageState extends State<StorePage> {
       colorText: Colors.brown.shade900,
     );
 
-    Navigator.pop(context);
+    Navigator.pop(context, true);
   }
 
   @override

@@ -90,18 +90,22 @@ class _ManageStoreScreenState extends State<ManageStoreScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          Navigator.push(
+          // Navigate and wait until Add Store page is closed
+          final result = await Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const StorePage(),
-            ),
+            MaterialPageRoute(builder: (context) => const StorePage()),
           );
+
+          if (result == true) {
+            controller.fetchAllStores();
+          }
         },
         backgroundColor: const Color(0xFFD7CCC8),
         foregroundColor: const Color(0xFF3E2723),
         shape: const CircleBorder(),
         child: const Icon(Icons.add, size: 30),
       ),
+
     );
   }
 

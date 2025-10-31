@@ -40,7 +40,7 @@ class CompactStoreCard extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Archive", style: TextStyle(color: Colors.red)),
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -53,7 +53,7 @@ class CompactStoreCard extends StatelessWidget {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message'] ?? 'Order archived successfully!'),
+            content: Text(result['message'] ?? 'Order Delete successfully!'),
             backgroundColor: Colors.green,
           ),
         );
