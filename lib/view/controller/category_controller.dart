@@ -11,6 +11,7 @@ class CategoryController extends GetxController {
       await fetchCategories();
       return true;
     } catch (e) {
+      print("⚠️ Error adding category: $e");
       return false;
     }
   }
@@ -20,16 +21,23 @@ class CategoryController extends GetxController {
       final result = await ApiCategoryServices.getCategories();
       categories.assignAll(result);
     } catch (e) {
+      print("⚠️ Error fetching categories: $e");
       categories.clear();
     }
   }
 
   Future<void> deleteCategories(String id) async {
     try {
-      final result = await ApiCategoryServices.deleteCategory(id);
+      // 🔹 Optimistic update (instant removal)
+      categories.removeWhere((cat) => cat.id.toString() == id);
+
+      // 🔹 Send delete request to backend
+      await ApiCategoryServices.deleteCategory(id);
+
+      // 🔹 (Optional) Re-fetch to ensure sync with server
       await fetchCategories();
     } catch (e) {
-      categories.clear();
+      print("⚠️ Error deleting category: $e");
     }
   }
 }

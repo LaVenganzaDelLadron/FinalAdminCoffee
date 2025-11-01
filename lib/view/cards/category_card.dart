@@ -22,7 +22,7 @@ class CategoryCard extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.brown),
         ),
         content: Text(
-          "Are you sure you want to delete the category '$id' '$categoryName'?",
+          "Are you sure you want to delete the category '$categoryName'?",
           style: const TextStyle(fontSize: 15),
         ),
         actions: [

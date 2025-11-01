@@ -2,18 +2,21 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../model/coffee.dart';
 import '../controller/auth_controller.dart';
 import '../controller/coffee_controller.dart';
 import '../controller/category_controller.dart';
 
-class AddCoffeePage extends StatefulWidget {
-  const AddCoffeePage({super.key});
+class UpdateCoffeePage extends StatefulWidget {
+  final Coffee coffee;
+
+  const UpdateCoffeePage({super.key, required this.coffee});
 
   @override
-  State<AddCoffeePage> createState() => _AddCoffeePageState();
+  State<UpdateCoffeePage> createState() => _UpdateCoffeePageState();
 }
 
-class _AddCoffeePageState extends State<AddCoffeePage> {
+class _UpdateCoffeePageState extends State<UpdateCoffeePage> {
   final nameController = TextEditingController();
   final descController = TextEditingController();
   final priceController = TextEditingController();
@@ -24,66 +27,89 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
 
   File? _imageFile;
   bool isActive = true;
-
   String? selectedCategoryId;
-  String? selectedCategoryName;
 
   @override
   void initState() {
     super.initState();
-    categoryController.fetchCategories(); // 🔄 Load categories
+    print("🟤 [DEBUG] UpdateCoffeePage.initState() called");
+    try {
+      nameController.text = widget.coffee.name;
+      descController.text = widget.coffee.description;
+      priceController.text = widget.coffee.price.toString();
+      selectedCategoryId = widget.coffee.category;
+      isActive = true;
+      print("✅ [DEBUG] Pre-filled coffee data loaded successfully");
+    } catch (e) {
+      print("❌ [ERROR] Failed to prefill coffee data: $e");
+    }
+    categoryController.fetchCategories();
   }
 
   Future<void> _pickImage() async {
-    final picked = await _picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() {
-        _imageFile = File(picked.path);
-      });
-    } else {
-      Get.snackbar("No Image", "You didn’t select any image.",
-          backgroundColor: Colors.brown.shade100,
-          colorText: Colors.brown.shade900);
+    print("🟤 [DEBUG] Image picker triggered");
+    try {
+      final picked = await _picker.pickImage(source: ImageSource.gallery);
+      if (picked != null) {
+        setState(() {
+          _imageFile = File(picked.path);
+        });
+        print("✅ [DEBUG] Image selected: ${picked.path}");
+      } else {
+        print("⚠️ [DEBUG] No image selected");
+        Get.snackbar("No Image", "You didn’t select any image.",
+            backgroundColor: Colors.brown.shade100,
+            colorText: Colors.brown.shade900);
+      }
+    } catch (e) {
+      print("❌ [ERROR] Image picker failed: $e");
     }
   }
 
-  Future<void> _addCoffee() async {
+  Future<void> _updateCoffee() async {
+    print("🟤 [DEBUG] UpdateCoffee triggered");
     final name = nameController.text.trim();
     final desc = descController.text.trim();
     final price = priceController.text.trim();
 
-    if (name.isEmpty ||
-        desc.isEmpty ||
-        price.isEmpty ||
-        _imageFile == null ||
-        selectedCategoryId == null) {
-      Get.snackbar("Error", "Please fill all fields and upload an image.",
+    if (name.isEmpty || desc.isEmpty || price.isEmpty || selectedCategoryId == null) {
+      print("⚠️ [DEBUG] Missing required fields");
+      Get.snackbar("Error", "Please fill all fields.",
           backgroundColor: Colors.brown.shade100,
           colorText: Colors.brown.shade900);
       return;
     }
 
-    final adminId =
-        AuthController.instance.currentAdmin.value?.id.toString() ?? "0";
+    final adminId = AuthController.instance.currentAdmin.value?.id.toString() ?? "0";
+    print("🟤 [DEBUG] Admin ID: $adminId");
 
-    await coffeeController.addCoffee(
-      name,
-      desc,
-      double.tryParse(price) ?? 0,
-      selectedCategoryId!, // ✅ Send category ID instead of name
-      adminId,
-      _imageFile!,
-    );
+    try {
+      print("📤 [DEBUG] Sending updateCoffee request...");
+      await coffeeController.updateCoffee(
+        widget.coffee.id.toString(),
+        name,
+        desc,
+        double.tryParse(price) ?? 0,
+        selectedCategoryId!,
+        adminId,
+        _imageFile ?? File(''),
+      );
+      print("✅ [DEBUG] Coffee updated successfully");
 
-    Get.snackbar("Success", "Coffee added successfully! ☕",
-        backgroundColor: Colors.brown.shade100,
-        colorText: Colors.brown.shade900);
-
-    Navigator.pop(context);
+      Get.snackbar("Updated", "Coffee updated successfully! ☕",
+          backgroundColor: Colors.brown.shade100,
+          colorText: Colors.brown.shade900);
+      Navigator.pop(context);
+    } catch (e) {
+      print("❌ [ERROR] _updateCoffee failed: $e");
+      Get.snackbar("Error", e.toString(),
+          backgroundColor: Colors.red.shade100, colorText: Colors.red.shade900);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    print("🟤 [DEBUG] Building UpdateCoffeePage UI");
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBF5),
       body: SafeArea(
@@ -95,16 +121,18 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 🔙 Header
                   Row(
                     children: [
                       IconButton(
                         icon: const Icon(Icons.arrow_back_ios_new_rounded,
                             color: Color(0xFF3E2723)),
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          print("🟤 [DEBUG] Back button pressed");
+                          Navigator.pop(context);
+                        },
                       ),
                       const Text(
-                        "Add Coffee",
+                        "Update Coffee",
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -115,12 +143,12 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    "Craft your next bestseller — smooth, rich, and irresistible.",
+                    "Modify your brew details below ☕",
                     style: TextStyle(color: Colors.brown, fontSize: 14),
                   ),
                   const SizedBox(height: 30),
 
-                  // ☕ Coffee Image Upload
+                  // ☕ Image
                   GestureDetector(
                     onTap: _pickImage,
                     child: Container(
@@ -136,44 +164,25 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
                           ),
                         ],
                         image: DecorationImage(
-                          image: _imageFile == null
-                              ? const AssetImage('assets/placeholder_coffee.jpg')
-                              : FileImage(_imageFile!) as ImageProvider,
+                          image: _imageFile != null
+                              ? FileImage(_imageFile!)
+                              : (widget.coffee.image != null &&
+                              widget.coffee.image!.isNotEmpty
+                              ? MemoryImage(widget.coffee.image!)
+                              : const AssetImage('assets/placeholder_coffee.jpg'))
+                          as ImageProvider,
                           fit: BoxFit.cover,
                         ),
                       ),
                       child: Stack(
                         children: [
                           Align(
-                            alignment: Alignment.topRight,
-                            child: Container(
-                              margin: const EdgeInsets.all(10),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 5, horizontal: 10),
-                              decoration: BoxDecoration(
-                                color: isActive
-                                    ? Colors.green.shade100
-                                    : Colors.red.shade100,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                isActive ? "Active" : "Inactive",
-                                style: TextStyle(
-                                  color: isActive
-                                      ? Colors.green.shade700
-                                      : Colors.red,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Align(
                             alignment: Alignment.bottomCenter,
                             child: Container(
                               color: Colors.black.withOpacity(0.3),
                               padding: const EdgeInsets.all(8),
                               child: const Text(
-                                "Tap to upload image",
+                                "Tap to change image",
                                 style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w500),
@@ -204,29 +213,29 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildLabel("Coffee Name"),
-                        _buildTextField(nameController, "Casa Latte"),
+                        _buildTextField(nameController, "Latte Deluxe"),
                         const SizedBox(height: 20),
 
                         _buildLabel("Description"),
                         _buildTextField(descController,
-                            "Silky espresso with oat milk and cardamom sugar.",
+                            "Rich espresso with smooth oat milk.",
                             maxLines: 3),
                         const SizedBox(height: 20),
 
                         _buildLabel("Price"),
-                        _buildTextField(priceController, "5.80",
+                        _buildTextField(priceController, "4.50",
                             keyboardType: TextInputType.number),
                         const SizedBox(height: 20),
 
-                        // 🟤 Dynamic Categories Dropdown
                         _buildLabel("Category"),
                         Obx(() {
                           final categories = categoryController.categories;
+                          print("🟤 [DEBUG] Categories loaded: ${categories.length}");
                           if (categories.isEmpty) {
                             return const Padding(
                               padding: EdgeInsets.all(8.0),
                               child: Text(
-                                "No categories available. Please add one first.",
+                                "No categories available.",
                                 style: TextStyle(color: Colors.brown),
                               ),
                             );
@@ -241,13 +250,8 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
                             ))
                                 .toList(),
                             onChanged: (val) {
-                              setState(() {
-                                selectedCategoryId = val;
-                                selectedCategoryName = categories
-                                    .firstWhere((c) =>
-                                c.id.toString() == val)
-                                    .name;
-                              });
+                              print("🟤 [DEBUG] Category changed: $val");
+                              setState(() => selectedCategoryId = val);
                             },
                             decoration: _fieldDecoration(),
                             hint: const Text("Select Category"),
@@ -259,8 +263,10 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
                           children: [
                             Checkbox(
                               value: isActive,
-                              onChanged: (val) =>
-                                  setState(() => isActive = val ?? false),
+                              onChanged: (val) {
+                                print("🟤 [DEBUG] isActive changed: $val");
+                                setState(() => isActive = val ?? false);
+                              },
                               activeColor: Colors.brown,
                             ),
                             const Text("Active on menu",
@@ -271,12 +277,14 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
                         ),
                         const SizedBox(height: 25),
 
-                        // Buttons
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             OutlinedButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: () {
+                                print("🟤 [DEBUG] Cancel button pressed");
+                                Navigator.pop(context);
+                              },
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.brown,
                                 side: const BorderSide(color: Colors.brown),
@@ -289,9 +297,9 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
                               child: const Text("Cancel"),
                             ),
                             ElevatedButton.icon(
-                              onPressed: _addCoffee,
-                              icon: const Icon(Icons.coffee, size: 20),
-                              label: const Text("Add Coffee"),
+                              onPressed: _updateCoffee,
+                              icon: const Icon(Icons.save, size: 20),
+                              label: const Text("Update Coffee"),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF3E2723),
                                 foregroundColor: Colors.white,
@@ -317,15 +325,13 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
     );
   }
 
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Colors.brown,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
+  Widget _buildLabel(String text) => Text(
+    text,
+    style: const TextStyle(
+      color: Colors.brown,
+      fontWeight: FontWeight.w600,
+    ),
+  );
 
   Widget _buildTextField(TextEditingController controller, String hint,
       {int maxLines = 1, TextInputType? keyboardType}) {

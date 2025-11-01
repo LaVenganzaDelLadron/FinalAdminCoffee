@@ -22,14 +22,14 @@ class CompactStoreCard extends StatelessWidget {
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         title: const Text(
-          "Archive Order",
+          "Delete Store",
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Color(0xFF3E2723),
           ),
         ),
         content: Text(
-          "Are you sure you want to archive order '${store.id}'? "
+          "Are you sure you want to archive store '${store.id}'? "
               "This item will be removed from the active list.",
           style: const TextStyle(fontSize: 15, color: Colors.black87),
         ),
@@ -53,7 +53,7 @@ class CompactStoreCard extends StatelessWidget {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message'] ?? 'Order Delete successfully!'),
+            content: Text(result['message'] ?? 'Store Delete successfully!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -124,7 +124,7 @@ class CompactStoreCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Order ID: ${store.id}',
+                    'Store ID: ${store.id}',
                     style: const TextStyle(
                       fontSize: 16.0,
                       fontWeight: FontWeight.bold,
@@ -133,7 +133,7 @@ class CompactStoreCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4.0),
                   Text(
-                    'Id: ${store.name ?? 'N/A'}',
+                    'Name: ${store.name ?? 'N/A'}',
                     style: const TextStyle(
                       fontSize: 14.0,
                       color: Colors.black54,

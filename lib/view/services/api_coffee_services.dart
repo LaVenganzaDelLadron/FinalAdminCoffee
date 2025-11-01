@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:admincoffee/view/ipaddress/ip.dart';
 import 'package:http/http.dart' as http;
+import '../../model/coffee.dart';
 
 class ApiCoffeeServices {
   static const String baseUrl = BASE_URL;
@@ -31,6 +32,40 @@ class ApiCoffeeServices {
     } else {
       throw Exception(
         'Failed to add coffee. Status: ${response.statusCode}. Body: ${response.body}',
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateCoffee(
+      String coffee_id,
+      String name,
+      String description,
+      String category,
+      double price,
+      String aid,
+      String image,
+      ) async {
+    final url = Uri.parse('$baseUrl/coffee/updatecoffee/$coffee_id');
+    var request = http.MultipartRequest('PUT', url); // ✅ fixed method
+
+    request.fields['name'] = name;
+    request.fields['description'] = description;
+    request.fields['category'] = category;
+    request.fields['price'] = price.toString();
+    request.fields['aid'] = aid;
+
+    if (image.isNotEmpty) {
+      request.files.add(await http.MultipartFile.fromPath('file', image));
+    }
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception(
+        'Failed to update coffee. Status: ${response.statusCode}. Body: ${response.body}',
       );
     }
   }
@@ -77,6 +112,29 @@ class ApiCoffeeServices {
       return {"error": e.toString()};
     }
   }
+
+  static Future<List<String>> fetchCategories() async {
+    final res = await http.get(Uri.parse('$baseUrl/categories/getcategories/'));
+    if (res.statusCode == 200) {
+      final List data = jsonDecode(res.body);
+      return data.map((e) => e['name'].toString()).toList();
+    } else {
+      throw Exception('Failed to load categories');
+    }
+  }
+
+  static Future<List<Coffee>> fetchCoffeesByCategory(int adminId, String categoryId) async {
+    final response = await http.get(
+      Uri.parse("$baseUrl/coffee/getproductsbycategory/$adminId/$categoryId"),
+    );
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((e) => Coffee.fromJson(e)).toList();
+    } else {
+      throw Exception('Failed to load coffees for category');
+    }
+  }
+
 
 }
 

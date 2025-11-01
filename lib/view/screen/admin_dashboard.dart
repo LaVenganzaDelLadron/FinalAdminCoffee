@@ -1,133 +1,37 @@
 import 'dart:ui';
-import 'package:admincoffee/view/screen/manage_order_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+// 🧩 Controllers
 import 'package:admincoffee/view/controller/order_controller.dart';
 import 'package:admincoffee/view/controller/auth_controller.dart';
 import 'package:admincoffee/view/controller/coffee_controller.dart';
 import 'package:admincoffee/view/controller/money_controller.dart';
+
+// 🧭 Screens
 import 'package:admincoffee/view/screen/add_coffee_page.dart';
 import 'package:admincoffee/view/screen/manage_coffee_page.dart';
-import 'package:admincoffee/view/screen/store_page.dart';
+import 'package:admincoffee/view/screen/manage_order_page.dart';
+import 'package:admincoffee/view/screen/manage_store_page.dart';
 import 'package:admincoffee/view/screen/category_page.dart';
+import 'package:admincoffee/view/screen/store_page.dart';
 
 import '../cards/top_selling_card.dart';
-import 'manage_store_page.dart';
 
-final adminId = AuthController.instance.currentAdmin.value?.id.toString() ?? "0";
-
-// ------------------------------
-// Dummy Models & Controllers
-// ------------------------------
-
-class Order {
-  final int id;
-  Order({required this.id});
-}
-
-class GetCoffeeCountController {
-  static final instance = GetCoffeeCountController();
-  Future<int> fetchCoffeeCount(String adminId) async => 12;
-}
-
-class GetOrderCountController {
-  static final instance = GetOrderCountController();
-  Future<int> fetchOrderCount() async => 24;
-}
-
-class GetProductController {
-  static final instance = GetProductController();
-  Future<List<String>> fetchAllProducts(String adminId) async => [];
-}
-
-class GetOrderController {
-  static final instance = GetOrderController();
-  Future<List<String>> fetchAllOrder() async => [];
-}
-
-class GetStatusOrderController {
-  static final instance = GetStatusOrderController();
-  Future<List<Order>> fetchOrdersByStatus(String status) async =>
-      [Order(id: 1), Order(id: 2)];
-}
-
-class GetTotalRevenueController {
-  static final instance = GetTotalRevenueController();
-  Future<double> fetchTotalRevenue() async => 12500.50;
-}
-
-class GetPendingPaymentController {
-  static final instance = GetPendingPaymentController();
-  Future<double> fetchPendingPayments() async => 3400.75;
-}
-
-// ------------------------------
-// Dummy Pages
-// ------------------------------
-
-class AllOrderPage extends StatelessWidget {
-  final List<String> order;
-  const AllOrderPage({super.key, required this.order});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("All Orders")),
-      body: const Center(child: Text("Orders Page")),
-    );
-  }
-}
-
-class AllCoffeePage extends StatelessWidget {
-  const AllCoffeePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("All Coffee")),
-      body: const Center(child: Text("All Coffees Page")),
-    );
-  }
-}
-
-class AllStorePage extends StatelessWidget {
-  const AllStorePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("All Store")),
-      body: const Center(child: Text("All Store Page")),
-    );
-  }
-}
-
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Admin Profile")),
-      body: const Center(
-        child: Text(
-          "Profile Page Content",
-          style: TextStyle(fontSize: 18),
-        ),
-      ),
-    );
-  }
-}
-
-// ------------------------------
+// --------------------------------
 // Admin Dashboard
-// ------------------------------
+// --------------------------------
+final adminId =
+    AuthController.instance.currentAdmin.value?.id.toString() ?? "0";
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final coffeeController = Get.put(CoffeeController());
+    coffeeController.fetchCoffeeCount(adminId);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
@@ -158,14 +62,15 @@ class AdminDashboard extends StatelessWidget {
         ],
       ),
       drawer: _buildGlassDrawer(context),
-      body: _buildDashboardBody(context),
+      body: _buildDashboardBody(context, coffeeController),
     );
   }
 
   // ------------------------------
   // Dashboard Body
   // ------------------------------
-  Widget _buildDashboardBody(BuildContext context) {
+  Widget _buildDashboardBody(
+      BuildContext context, CoffeeController coffeeController) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -189,7 +94,7 @@ class AdminDashboard extends StatelessWidget {
             mainAxisSpacing: 12,
             physics: const NeverScrollableScrollPhysics(),
             children: [
-              _buildCoffeeStatCard(context),
+              _buildCoffeeStatCard(context, coffeeController),
               _buildOrderStatCard(context),
             ],
           ),
@@ -225,50 +130,32 @@ class AdminDashboard extends StatelessWidget {
   // ------------------------------
   // Widgets
   // ------------------------------
-  Widget _buildCoffeeStatCard(BuildContext context) {
-    return FutureBuilder<int>(
-      future: CoffeeController().fetchCoffeeCount(adminId),
-      builder: (context, snapshot) {
-        Widget card;
+  Widget _buildCoffeeStatCard(
+      BuildContext context, CoffeeController coffeeController) {
+    return Obx(() {
+      if (coffeeController.isLoading.value) {
+        return _buildLoadingCard();
+      }
 
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          card = _buildLoadingCard();
-        } else if (snapshot.hasError || !snapshot.hasData) {
-          card = _buildEnhancedStatCard(
+      return GestureDetector(
+        onTap: () {
+          Navigator.push(
             context,
-            title: "Coffee",
-            value: "0",
-            icon: Icons.coffee,
-            color1: const Color(0xFFBCAAA4),
-            color2: const Color(0xFFD7CCC8),
+            MaterialPageRoute(
+                builder: (context) => const ManageProductsScreen()),
           );
-        } else {
-          card = _buildEnhancedStatCard(
-            context,
-            title: "Coffee",
-            value: snapshot.data.toString(),
-            icon: Icons.coffee,
-            color1: const Color(0xFF8D6E63),
-            color2: const Color(0xFFBCAAA4),
-          );
-        }
-
-        // Make the card clickable
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ManageProductsScreen(),
-              ),
-            );
-          },
-          child: card,
-        );
-      },
-    );
+        },
+        child: _buildEnhancedStatCard(
+          context,
+          title: "Coffee",
+          value: coffeeController.coffeeCount.value.toString(),
+          icon: Icons.coffee,
+          color1: const Color(0xFF8D6E63),
+          color2: const Color(0xFFBCAAA4),
+        ),
+      );
+    });
   }
-
 
   Widget _buildOrderStatCard(BuildContext context) {
     return FutureBuilder<int>(
@@ -291,8 +178,7 @@ class AdminDashboard extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ManageOrderScreen(),
-                ),
+                    builder: (context) => const ManageOrderScreen()),
               );
             },
             child: _buildEnhancedStatCard(
@@ -361,7 +247,6 @@ class AdminDashboard extends StatelessWidget {
     });
   }
 
-
   Widget _buildRevenueOverview() {
     return Column(
       children: [
@@ -406,7 +291,6 @@ class AdminDashboard extends StatelessWidget {
   // ------------------------------
   // Helper UI Components
   // ------------------------------
-
   Widget _buildRevenueCard(String title, String amount, Color color) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -484,7 +368,6 @@ class AdminDashboard extends StatelessWidget {
   // ------------------------------
   // Glass Drawer
   // ------------------------------
-
   Widget _buildGlassDrawer(BuildContext context) {
     return Drawer(
       backgroundColor: Colors.transparent,
@@ -527,7 +410,8 @@ class AdminDashboard extends StatelessWidget {
                 _buildDrawerItem(context, Icons.store, "Store", () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const ManageStoreScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => const ManageStoreScreen()),
                   );
                 }),
                 _buildDrawerItem(context, Icons.receipt, "Orders", () {
@@ -563,6 +447,25 @@ class AdminDashboard extends StatelessWidget {
       leading: Icon(icon, color: Colors.white),
       title: Text(title, style: const TextStyle(color: Colors.white)),
       onTap: onTap,
+    );
+  }
+}
+
+// --------------------------------
+// Dummy Profile Page
+// --------------------------------
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Admin Profile")),
+      body: const Center(
+        child: Text(
+          "Profile Page Content",
+          style: TextStyle(fontSize: 18),
+        ),
+      ),
     );
   }
 }
