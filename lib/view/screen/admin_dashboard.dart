@@ -14,7 +14,7 @@ import 'package:admincoffee/view/screen/manage_coffee_page.dart';
 import 'package:admincoffee/view/screen/manage_order_page.dart';
 import 'package:admincoffee/view/screen/manage_store_page.dart';
 import 'package:admincoffee/view/screen/category_page.dart';
-import 'package:admincoffee/view/screen/store_page.dart';
+import 'package:admincoffee/view/screen/add_store_page.dart';
 
 import '../cards/top_selling_card.dart';
 

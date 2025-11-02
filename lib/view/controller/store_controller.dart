@@ -5,8 +5,10 @@ import '../services/api_store_services.dart';
 
 class StoreController extends GetxController {
 
+  var filteredStoreList = <Store>[].obs;
   var storeList = <Store>[].obs;
   var isLoading = false.obs;
+  var storeCount = 0.obs;
 
 
   Future<void> AddStore(
@@ -31,6 +33,30 @@ class StoreController extends GetxController {
       }
     }catch(e, stack){
       print(e);
+    }
+  }
+
+  Future<void> updateStore(
+      String store_id,
+      String name,
+      String address,
+      String prep_time_minutes,
+      String status,
+      ) async {
+    try {
+      final result = await ApiStoreServices.updateStore(
+        store_id,
+        name,
+        address,
+        prep_time_minutes,
+        status,
+      );
+
+      print("☕ Coffee Updated: ${result["coffee_id"]}");
+      await fetchAllStores(); // refresh list
+      storeCount.value = storeList.length;
+    } catch (e, stack) {
+      print("🔥 [ERROR] UpdateCoffee failed: $e\n$stack");
     }
   }
 

@@ -1,9 +1,9 @@
-import 'package:admincoffee/view/screen/store_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../cards/store_card.dart';
 import '../controller/store_controller.dart';
 import '../controller/auth_controller.dart';
+import 'add_store_page.dart';
 
 class ManageStoreScreen extends StatefulWidget {
   const ManageStoreScreen({super.key});
@@ -14,171 +14,185 @@ class ManageStoreScreen extends StatefulWidget {
 
 class _ManageStoreScreenState extends State<ManageStoreScreen> {
   final StoreController controller = Get.put(StoreController());
+  final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    debugPrint("🏪 ManageStoreScreen: initState called");
+    _loadData();
 
-    final adminId = AuthController.instance.currentAdmin.value?.id;
-    debugPrint("👤 Current Admin ID on init: $adminId");
-
-    if (adminId != null) {
-      debugPrint("🚀 Fetching stores for admin $adminId (initState)");
-      controller.fetchAllStores();
-    } else {
-      debugPrint("⚠️ No admin found during initState, waiting for admin listener...");
-    }
-
-    // Listen for admin changes
-    ever(AuthController.instance.currentAdmin, (admin) {
-      if (admin != null) {
-        debugPrint("✅ Admin detected (${admin.id}), refetching stores...");
-        controller.fetchAllStores();
-      } else {
-        debugPrint("🧹 Admin is null, clearing storeList");
-        controller.storeList.clear();
-      }
+    // Listen for search input changes
+    searchController.addListener(() {
+      _applySearchFilter(searchController.text);
     });
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadData() async {
+    final adminId = AuthController.instance.currentAdmin.value?.id?.toString() ?? '';
+    if (adminId.isNotEmpty) {
+      await controller.fetchAllStores();
+      _applySearchFilter(searchController.text);
+    }
+  }
+
+  Future<void> _refreshData() async {
+    await controller.fetchAllStores();
+    _applySearchFilter(searchController.text);
+  }
+
+  void _applySearchFilter(String query) {
+    if (query.isEmpty) {
+      controller.filteredStoreList.value = controller.storeList;
+    } else {
+      controller.filteredStoreList.value = controller.storeList
+          .where((store) =>
+      store.name.toLowerCase().contains(query.toLowerCase()) ||
+          store.address.toLowerCase().contains(query.toLowerCase()))
+          .toList();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF3E2723),
-      body: CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(),
-          Obx(() {
-            if (controller.isLoading.value && controller.storeList.isEmpty) {
-              return const SliverFillRemaining(
-                child: Center(
-                  child: CircularProgressIndicator(color: Color(0xFFD7CCC8)),
-                ),
-              );
-            }
-
-            if (controller.storeList.isEmpty && !controller.isLoading.value) {
-              return const SliverFillRemaining(
-                child: Center(
-                  child: Text(
-                    'No stores found. Add a new store!',
-                    style: TextStyle(color: Colors.white70, fontSize: 18),
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        color: const Color(0xFFD7CCC8),
+        backgroundColor: const Color(0xFF4E342E),
+        child: CustomScrollView(
+          slivers: [
+            _buildSliverAppBar(),
+            Obx(() {
+              if (controller.isLoading.value && controller.storeList.isEmpty) {
+                return const SliverFillRemaining(
+                  child: Center(
+                    child: CircularProgressIndicator(color: Color(0xFFD7CCC8)),
                   ),
+                );
+              }
+
+              final list = controller.filteredStoreList;
+
+              if (list.isEmpty && !controller.isLoading.value) {
+                return const SliverFillRemaining(
+                  child: Center(
+                    child: Text(
+                      'No stores found.',
+                      style: TextStyle(color: Colors.white70, fontSize: 18),
+                    ),
+                  ),
+                );
+              }
+
+              return SliverList(
+                delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                    final store = list[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: CompactStoreCard(
+                        store: store,
+                        onDelete: _refreshData,
+                        onEdit: () {},
+                      ),
+                    );
+                  },
+                  childCount: list.length,
                 ),
               );
-            }
-
-            return SliverList(
-              delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                  final store = controller.storeList[index];
-                  return CompactStoreCard(
-                    store: store,
-                    onDelete: () => controller.fetchAllStores(),
-                    onEdit: () {
-                      debugPrint("✏️ Edit tapped for store ${store.id}");
-                      // TODO: Navigate to EditStorePage if implemented
-                    },
-                  );
-                },
-                childCount: controller.storeList.length,
-              ),
-            );
-          }),
-        ],
+            }),
+          ],
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          // Navigate and wait until Add Store page is closed
           final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const StorePage()),
           );
 
           if (result == true) {
-            controller.fetchAllStores();
+            _refreshData();
           }
         },
         backgroundColor: const Color(0xFFD7CCC8),
         foregroundColor: const Color(0xFF3E2723),
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, size: 30),
+        icon: const Icon(Icons.add, size: 26),
+        label: const Text(
+          "Add Store",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
-
     );
   }
 
-  // --- AppBar Section ---
   SliverAppBar _buildSliverAppBar() {
     return SliverAppBar(
       pinned: true,
       elevation: 0,
+      backgroundColor: Colors.transparent,
       automaticallyImplyLeading: false,
-      backgroundColor: const Color(0xFF6D4C41),
-      toolbarHeight: 120,
-      flexibleSpace: FlexibleSpaceBar(
-        titlePadding: EdgeInsets.zero,
-        centerTitle: true,
-        title: Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16, top: 20),
-          child: _buildAppBarContent(),
+      expandedHeight: 160,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF6D4C41), Color(0xFF3E2723)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),
-      ),
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(20),
-        child: Container(color: const Color(0xFF6D4C41)),
+        child: FlexibleSpaceBar(
+          titlePadding: const EdgeInsets.only(bottom: 20),
+          centerTitle: true,
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Manage Stores',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildSearchBar(),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildAppBarContent() {
-    return Column(
-      children: [
-        const Text(
-          'Manage Stores',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+  Widget _buildSearchBar() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      height: 45,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TextField(
+        controller: searchController,
+        style: const TextStyle(color: Colors.white),
+        cursorColor: Colors.white70,
+        decoration: const InputDecoration(
+          hintText: 'Search stores...',
+          hintStyle: TextStyle(color: Color.fromARGB(180, 255, 255, 255)),
+          prefixIcon: Icon(Icons.search, color: Colors.white70),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.only(top: 14, left: 5),
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                height: 48,
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(25, 255, 255, 255),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const TextField(
-                  style: TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: 'Search stores...',
-                    hintStyle: TextStyle(color: Color.fromARGB(150, 255, 255, 255)),
-                    prefixIcon: Icon(Icons.search, color: Color.fromARGB(150, 255, 255, 255)),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.only(top: 14, left: 5),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: const Color(0xFF5D4037),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.filter_list, color: Colors.white),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-      ],
+      ),
     );
   }
 }
