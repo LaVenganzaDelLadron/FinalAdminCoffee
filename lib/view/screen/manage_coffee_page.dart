@@ -22,23 +22,34 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
     _loadData();
   }
 
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  // Initial load
   Future<void> _loadData() async {
     final adminId = AuthController.instance.currentAdmin.value?.id?.toString() ?? '';
     if (adminId.isNotEmpty) {
       await controller.fetchCoffees(adminId);
+      _applySearchFilter(searchController.text);
     } else {
       debugPrint("⚠️ No admin ID found in AuthController.");
     }
   }
 
+  // Pull-to-refresh & manual refresh
   Future<void> _refreshData() async {
     final adminId = AuthController.instance.currentAdmin.value?.id?.toString() ?? '';
     if (adminId.isNotEmpty) {
       await controller.fetchCoffees(adminId);
-      _applySearchFilter(searchController.text); // reapply search after refresh
+      _applySearchFilter(searchController.text);
+      debugPrint("🔄 Data refreshed successfully!");
     }
   }
 
+  // Apply search filter
   void _applySearchFilter(String query) {
     controller.filteredCoffeeList.value = controller.coffeeList
         .where((coffee) =>
@@ -84,7 +95,8 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                       (context, index) {
                     final coffee = list[index];
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       child: CompactCoffeeCard(coffee: coffee),
                     );
                   },
@@ -101,7 +113,7 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
             context,
             MaterialPageRoute(builder: (context) => const AddCoffeePage()),
           );
-          await _refreshData();
+          await _refreshData(); // Refresh after adding new coffee
         },
         backgroundColor: const Color(0xFFFFE0B2),
         foregroundColor: const Color(0xFF3E2723),
@@ -114,7 +126,7 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
     );
   }
 
-  // Gradient header + working search bar
+  // Gradient header + search bar
   SliverAppBar _buildSliverAppBar() {
     return SliverAppBar(
       pinned: true,

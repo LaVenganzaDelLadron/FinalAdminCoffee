@@ -50,11 +50,13 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
   Future<void> _addCoffee() async {
     final name = nameController.text.trim();
     final desc = descController.text.trim();
-    final price = priceController.text.trim();
+    final priceText = priceController.text.trim();
+    final price = double.tryParse(priceText) ?? -1; // parse price
 
+    // 1️⃣ Validate required fields
     if (name.isEmpty ||
         desc.isEmpty ||
-        price.isEmpty ||
+        priceText.isEmpty ||
         _imageFile == null ||
         selectedCategoryId == null) {
       Get.snackbar("Error", "Please fill all fields and upload an image.",
@@ -63,13 +65,33 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
       return;
     }
 
+    // 2️⃣ Validate price is positive
+    if (price <= 0) {
+      Get.snackbar("Invalid Price", "Price must be greater than 0.",
+          backgroundColor: Colors.brown.shade100,
+          colorText: Colors.brown.shade900);
+      return;
+    }
+
+    // 3️⃣ Validate name uniqueness (case-insensitive)
+    final exists = coffeeController.coffeeList.any(
+          (coffee) => coffee.name.toLowerCase() == name.toLowerCase(),
+    );
+    if (exists) {
+      Get.snackbar("Duplicate Name", "Coffee with this name already exists.",
+          backgroundColor: Colors.brown.shade100,
+          colorText: Colors.brown.shade900);
+      return;
+    }
+
+    // ✅ All validations passed, proceed
     final adminId =
         AuthController.instance.currentAdmin.value?.id.toString() ?? "0";
 
     await coffeeController.addCoffee(
       name,
       desc,
-      double.tryParse(price) ?? 0,
+      price,
       selectedCategoryId!, // ✅ Send category ID instead of name
       adminId,
       _imageFile!,
@@ -81,6 +103,7 @@ class _AddCoffeePageState extends State<AddCoffeePage> {
 
     Navigator.pop(context);
   }
+
 
   @override
   Widget build(BuildContext context) {
